@@ -14,35 +14,45 @@ module Tinymce::Hammer::ViewHelpers
     tinymce_hammer_javascript_tags
   end
 
+  # Returns init javascript file
+  # If introduced in the js controler we could included in combine action
+  def tinymce_hammer_init_javascript
+    Tinymce::Hammer.custom_config_setup  # load the custom config file if exists
+    init = Tinymce::Hammer.init.collect{|key,value| "#{key} : #{value.to_json}" }.join(",\n")
+    lists = Tinymce::Hammer.lists_url.collect { |key,value| "init.#{key} = '#{tinymce_hammer_lists_js_url(value)}';" }.join(",\n") unless Tinymce::Hammer.lists_url.empty?
+    setup = "init.setup = #{Tinymce::Hammer.setup};" if Tinymce::Hammer.setup
+    <<-eos
+      TinymceHammer = {
+        init : function() {
+          var init = { #{init} };
+          init.mode = 'textareas';
+          init.editor_selector = 'tinymce';
+          init.plugins = '#{Tinymce::Hammer.plugins.join(',')}';
+          init.language = '#{Tinymce::Hammer.languages.first}';
+          #{lists}
+          #{setup}
+          tinyMCE.init(init);
+        },
+        addEditor : function(dom_id) {
+          tinyMCE.execCommand('mceAddControl', true, dom_id);
+        },
+        removeEditor : function(dom_id) {
+          tinyMCE.triggerSave();
+          tinyMCE.execCommand('mceRemoveControl', true, dom_id);
+        }
+      }
+      DomReady.ready(TinymceHammer.init);
+    eos
+  end
+
   # Returns two script tags.  The first loads the combined javascript file
   # containing tinymce.  The second tag initializes tiny mce.
   def tinymce_hammer_javascript_tags
+    res = "<script src='#{tinymce_hammer_js_path}' type='text/javascript'></script>\n"
+# <script type='text/javascript'>#{tinymce_hammer_init_javascript}</script>"
+    res += javascript_tag "#{tinymce_hammer_init_javascript}"
 
-    init = Tinymce::Hammer.init.collect{|key,value|
-      "#{key} : #{value.to_json}"
-    }.join(', ')
-
-    setup = "init.setup = #{Tinymce::Hammer.setup};" if Tinymce::Hammer.setup
-
-    return "
-<script src='#{tinymce_hammer_js_path}' type='text/javascript'></script>
-<script type='text/javascript'>
-  TinymceHammer = {
-    init : function() {
-      var init = { #{init} };
-      init.mode = 'specific_textareas';
-      init.editor_selector = 'tinymce';
-      init.plugins = '#{Tinymce::Hammer.plugins.join(',')}';
-      init.language = '#{Tinymce::Hammer.languages.first}';
-      #{setup}
-      tinyMCE.init(init);
-    },
-    addEditor : function(dom_id) {
-      tinyMCE.execCommand('mceAddControl', true, dom_id);
-    }
-  }
-  DomReady.ready(TinymceHammer.init);
-</script>"
+    res
   end
 
   def tinymce_tag name, content = '', options = {}
@@ -58,7 +68,7 @@ module Tinymce::Hammer::ViewHelpers
   end
 
   def append_class_name options, class_name #:nodoc:
-    key = options.has_key?('class') ? 'class' : :class 
+    key = options.has_key?('class') ? 'class' : :class
     unless options[key].to_s =~ /(^|\s+)#{class_name}(\s+|$)/
       options[key] = "#{options[key]} #{class_name}".strip
     end

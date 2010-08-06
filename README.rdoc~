@@ -62,24 +62,6 @@ variable, and if found will pull data from that to populate the field with.
     <%= form.tinymce :body %>
   <% end %>
 
-
-NOTE: I started making changes from here
-
-=== Example 4: tinymice (in remote call)
- Step 1. in the top of admin/products/edit.html.erb view add or if added in the layout do not go through this
- <%= tinymce_hammer_javascript_tags %>
-
- Step 2. in the end of edit.rjs and update.rjs add
- page.call 'TinymceHammer.addEditor', 'product_description'
-
- Step 3. in the onsubmit event for the form where 'product_description' is
- add
- TinymceHammer.removeEditor('product_description');
- call before
- $('product_title_form').submit(); return false
-
- Step 4. Ajust the configuration of the editor according the config/tinymce_hammer.yml.example
-
 == Advanced Usage
 
 The basic examples above get a TinyMCE editor up and running quickly.  You
@@ -98,31 +80,31 @@ how and when.  The url to the combine file is:
   /javascripts/tinymce_hammer.js
 
 It works great to lazy load (I personally use LazyLoad from
-http://wonko.com/post/painless_javascript_lazy_loading_with_lazyload).
+http://wonko.com/post/painless_javascript_lazy_loading_with_lazyload).  
 
 == Configuration
 
 tinymce_hammer has five configuration options.  Its best to place them in an
 intializer (like config/initializer/tinymce_hammer.rb).  Here they are with their
-default values:
+default values: 
 
-* Tinymce::Hammer.install_path
+* Tinymce::Hammer.install_path  
 
     '/javascripts/tiny_mce'
 
-* Tinymce::Hammer.plugins
+* Tinymce::Hammer.plugins       
 
     ['paste']
 
-* Tinymce::Hammer.languages
+* Tinymce::Hammer.languages     
 
     ['en']
 
-* Tinymce::Hammer.themes
+* Tinymce::Hammer.themes        
 
     ['advanced']
 
-* Tinymce::Hammer.init
+* Tinymce::Hammer.init          
 
     [
       [:paste_convert_headers_to_strong, true],
@@ -167,7 +149,7 @@ by tinymce_hammer.  If this doesn't work for your, try the advanced usage.
 
 == Questions
 
-The best way to get help is to post to the mailing list (google group).
+The best way to get help is to post to the mailing list (google group).  
 
   http://groups.google.com/group/tinymce_hammer/topics
 
