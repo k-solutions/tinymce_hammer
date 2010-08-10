@@ -45,11 +45,13 @@ module Tinymce::Hammer
     @@plugins      = custom_config[:plugins]      if custom_config[:plugins]
     @@languages    = custom_config[:languages]    if custom_config[:languages]
     @@themes       = custom_config[:themes]       if custom_config[:themes]
+    @@setup        = custom_config[:setup]        if custom_config[:setup]
+
     @@init.merge!(custom_config[:init]) if custom_config[:init]
 
     # add list paths
     if custom_config[:directories]
-      @@lists_path.merge!( custom_config[:directories].reject {|val| val[1][0]=='/' }.inject({}) { |res,val| res.merge!({ val[0] => "#{RAILS_ROOT}/#{val[1]}"})} )
+      @@lists_path.merge!( custom_config[:directories].reject {|val| val[1][0]=='/' }.inject({}) { |res,val| res.merge!({ val[0] => "#{Rails.root}/#{val[1]}"})} )
     end
     # sets url params for the url_for call in controller
     @@lists_url[:external_image_list_url] ||= { :type => 'images' } if self.images_list_path

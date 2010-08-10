@@ -26,20 +26,28 @@ module Tinymce::Hammer::ViewHelpers
         init : function() {
           var init = { #{init} };
           init.mode    = 'textareas';
-          init.cleanup = false;
           init.editor_selector = 'tinymce';
           init.plugins = '#{Tinymce::Hammer.plugins.join(',')}';
           init.language = '#{Tinymce::Hammer.languages.first}';
           #{lists}
           #{setup}
+
           tinyMCE.init(init);
         },
-        addEditor : function(dom_id) {
+        addEditor : function(dom_id) { // adds tinyMCE editor on the dom_id NOTE: the dom must be a textarea element
           tinyMCE.execCommand('mceAddControl', true, dom_id);
         },
-        removeEditor : function(dom_id) {
+        removeEditor : function(dom_id) { // use this for submiting info to the server backend from the editor
           tinyMCE.triggerSave();
           tinyMCE.execCommand('mceRemoveControl', true, dom_id);
+        },
+        resetEditor : function(dom_id) { // returns textarea in it normal state
+          tinyMCE.execCommand('mceRemoveControl', true, dom_id);
+          $('#'+dom_id).reset(); // the jQuery code
+          //$(dom_id).reset();   // the Prototype code
+        },
+        loaderEditor : function() {
+          return tinyMCE.ScriptLoader();
         }
       }
       DomReady.ready(TinymceHammer.init);
