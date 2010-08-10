@@ -64,6 +64,7 @@ class Tinymce::HammerController < ActionController::Base
     case params[:type]
     when 'images'
       res         = "var tinyMCEImageList = new Array( "
+      extensions  = "jpg,png,gif"
       dir         = Tinymce::Hammer.images_list_path
     when 'media'
       res         = "var tinyMCEMediaList = new Array( "
@@ -73,13 +74,14 @@ class Tinymce::HammerController < ActionController::Base
       dir         = Tinymce::Hammer.links_list_path
     when 'templates'
       res         = "var tinyMCETemplateList = new Array( "
+      extensions  = "htm,html"
       dir         = Tinymce::Hammer.templates_list_path
     end
 
     unless dir.blank?
       # public_path = Tinymce::Hammer.public_path_for dir
       public_url  = "#{request.protocol}#{request.host_with_port}/#{Tinymce::Hammer.public_path_for(dir)}"
-      files = Dir["#{dir}/*.{jpg,png}"]
+      files = Dir["#{dir}/*.{#{extensions}}"]
       js_array = files.inject([]) do |rs,f|
         basename= File.basename(f)
         base_url= "#{public_url}/#{basename}"

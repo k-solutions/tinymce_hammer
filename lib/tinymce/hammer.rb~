@@ -1,8 +1,16 @@
 module Tinymce::Hammer
 
-  mattr_accessor :install_path, :src, :languages, :themes, :plugins, :setup
+  mattr_accessor :install_path, :src, :languages, :themes, :plugins, :setup, :lists_url
+
+  @@custom_config =  "#{RAILS_ROOT}/config/tinymce_hammer.yml"    # custom_config file
+  @@custom_config_notdone = true                                  # flag for processing custom config
 
   @@install_path = '/javascripts/tiny_mce'
+
+  # optional : image,media,template lists path
+  @@lists_path = { :image => 'images', :media => 'media', :templates => 'templates', :links => 'links' }
+  @@lists_url  = Hash.new
+  @@public_path_marker = 'public'    # this markers presents the point from which the public path must be extracted
 
   @@src = false
 
@@ -14,31 +22,96 @@ module Tinymce::Hammer
 
   @@themes = ['advanced']
 
-  @@init = [
-    [:paste_convert_headers_to_strong, true],
-    [:paste_convert_middot_lists, true],
-    [:paste_remove_spans, true],
-    [:paste_remove_styles, true],
-    [:paste_strip_class_attributes, true],
-    [:theme, 'advanced'],
-    [:theme_advanced_toolbar_align, 'left'],
-    [:theme_advanced_toolbar_location, 'top'],
-    [:theme_advanced_buttons1, 'undo,redo,cut,copy,paste,pastetext,|,bold,italic,strikethrough,blockquote,charmap,bullist,numlist,removeformat,|,link,unlink,image,|,cleanup,code'],
-    [:theme_advanced_buttons2, ''],
-    [:theme_advanced_buttons3, ''],
-    [:valid_elements, "a[href|title],blockquote[cite],br,caption,cite,code,dl,dt,dd,em,i,img[src|alt|title|width|height|align],li,ol,p,pre,q[cite],small,strike,strong/b,sub,sup,u,ul"],
-  ]
+  @@init = {
+    :paste_convert_headers_to_strong  => true,
+    :paste_convert_middot_lists       => true,
+    :paste_remove_spans               => true,
+    :paste_remove_styles              => true,
+    :paste_strip_class_attributes     =>  true,
+    :theme                            => 'advanced',
+    :theme_advanced_toolbar_align     => 'left',
+    :theme_advanced_toolbar_location  => 'top',
+    :theme_advanced_buttons1          => 'undo,redo,cut,copy,paste,pastetext,|,bold,italic,strikethrough,blockquote,charmap,bullist,numlist,removeformat,|,link,unlink,image,|,cleanup,code',
+    :theme_advanced_buttons2          => '',
+    :theme_advanced_buttons3          => '',
+    :valid_elements                   => "a[href|title],blockquote[cite],br,caption,cite,code,dl,dt,dd,em,i,img[src|alt|title|width|height|align],li,ol,p,pre,q[cite],small,strike,strong/b,sub,sup,u,ul",
+  }
+
+  # reset module values according custom config file
+  def self.custom_config_setup
+    return unless @@custom_config_notdone and File.exists? @@custom_config
+    custom_config  = YAML.load_file(@@custom_config)
+    @@install_path = custom_config[:install_path] if custom_config[:install_path]
+    @@plugins      = custom_config[:plugins]      if custom_config[:plugins]
+    @@languages    = custom_config[:languages]    if custom_config[:languages]
+    @@themes       = custom_config[:themes]       if custom_config[:themes]
+    @@init.merge!(custom_config[:init]) if custom_config[:init]
+
+    # add list paths
+    if custom_config[:directories]
+      @@lists_path.merge!( custom_config[:directories].reject {|val| val[1][0]=='/' }.inject({}) { |res,val| res.merge!({ val[0] => "#{RAILS_ROOT}/#{val[1]}"})} )
+    end
+    # sets url params for the url_for call in controller
+    @@lists_url[:external_image_list_url] ||= { :type => 'images' } if self.images_list_path
+    @@lists_url[:media_external_list_url] ||= { :type => 'media' } if self.media_list_path
+    @@lists_url[:template_external_list_url] ||= { :type => 'template' } if self.templates_list_path
+    @@lists_url[:external_link_list_url] ||= { :type => 'link' } if self.links_list_path
+
+    # process once flag
+    @@custom_config_notdone = false
+
+    true
+  end
 
   def self.init= js
     @@init = js
   end
 
   def self.init
-    @@init
+    @@init[:theme] ||= @@themes.first
+
+    @@init.to_a
+  end
+
+  def self.images_list_path
+    self.lists_path :images
+  end
+
+  def self.links_list_path
+    self.lists_path :links
+  end
+
+  def self.media_list_path
+    self.lists_path :media
+  end
+
+  def self.templates_list_path
+    self.lists_path :templates
   end
 
   def self.url_path
     "#{ActionController::Base.relative_url_root}#{@@install_path}"
   end
 
+  # gives the public path for dirrectory path string based on the marker
+  def self.public_path_for dir='', marker=nil
+    marker ||= @@public_path_marker
+    return '/' if dir.blank? or marker.blank?
+    elms = dir.to_s.split(File::SEPARATOR)
+    res, it = [], nil
+    while !elms.empty?
+      it = elms.pop
+      break if it == marker
+      res << it
+    end
+
+    res.reverse.join(File::SEPARATOR)
+  end
+
+  protected
+
+  def self.lists_path type
+    return nil unless File.readable? @@lists_path[type]
+    @@lists_path[type]
+  end
 end

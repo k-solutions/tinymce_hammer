@@ -25,7 +25,8 @@ module Tinymce::Hammer::ViewHelpers
       TinymceHammer = {
         init : function() {
           var init = { #{init} };
-          init.mode = 'textareas';
+          init.mode    = 'textareas';
+          init.cleanup = false;
           init.editor_selector = 'tinymce';
           init.plugins = '#{Tinymce::Hammer.plugins.join(',')}';
           init.language = '#{Tinymce::Hammer.languages.first}';
@@ -43,6 +44,17 @@ module Tinymce::Hammer::ViewHelpers
       }
       DomReady.ready(TinymceHammer.init);
     eos
+  end
+
+  # Returns two script tags.  The first loads the combined jquery-tinymce javascript file
+  # The second tag initializes tiny mce.
+  # NOTE: Jquery it self must be loaded
+  def tinymce_hammer_jquery_javascript_tags
+    res = "<script src='#{Tinymce::Hammer.url_path}/jquery.tinymce.js' type='text/javascript'></script>\n"
+    # <script type='text/javascript'>#{tinymce_hammer_init_javascript}</script>"
+    res += javascript_tag "#{tinymce_hammer_init_javascript}"
+
+    res
   end
 
   # Returns two script tags.  The first loads the combined javascript file

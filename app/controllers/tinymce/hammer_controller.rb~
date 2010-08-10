@@ -3,15 +3,15 @@ class Tinymce::HammerController < ActionController::Base
   REQUIRED = true
   OPTIONAL = false
   MARK_DONE = true
-  
+
   caches_page :combine
-  
+
   before_filter do |c|
     c.headers["Content-Type"] = "text/javascript; charset=utf-8"
   end
 
   # Combines the following files into a single .js file, and caches that file
-  # to disk (when action_controller.perform_caching == true).   
+  # to disk (when action_controller.perform_caching == true).
   #
   # * tiny_mce.js (the main library)
   # * each requested language file (like en.js)
@@ -52,9 +52,45 @@ class Tinymce::HammerController < ActionController::Base
         add_content("plugins/#{plugin}/langs/#{lang}.js", OPTIONAL, MARK_DONE)
       end
     end
-    
+
     render :text => content, :layout => false
 
+  end
+
+  # Generates lists for the tinyMce images and meias controls options
+  def lists
+    Tinymce::Hammer.custom_config_setup
+    params[:type] ||= 'images'
+    case params[:type]
+    when 'images'
+      res         = "var tinyMCEImageList = new Array( "
+      extensions  = "jpg,png,gif"
+      dir         = Tinymce::Hammer.images_list_path
+    when 'media'
+      res         = "var tinyMCEMediaList = new Array( "
+      dir         = Tinymce::Hammer.media_list_path
+    when 'links'
+      res         = "var tinyMCELinkList = new Array( "
+      dir         = Tinymce::Hammer.links_list_path
+    when 'templates'
+      res         = "var tinyMCETemplateList = new Array( "
+      dir         = Tinymce::Hammer.templates_list_path
+    end
+
+    unless dir.blank?
+      # public_path = Tinymce::Hammer.public_path_for dir
+      public_url  = "#{request.protocol}#{request.host_with_port}/#{Tinymce::Hammer.public_path_for(dir)}"
+      files = Dir["#{dir}/*.{jpg,png}"]
+      js_array = files.inject([]) do |rs,f|
+        basename= File.basename(f)
+        base_url= "#{public_url}/#{basename}"
+        rs << "[ '#{basename}', '#{base_url}' ]"
+      end.join(",\n")
+      res += "#{js_array});"
+    else
+      res += ");"
+    end
+    render :text => res
   end
 
   protected
@@ -62,6 +98,8 @@ class Tinymce::HammerController < ActionController::Base
   # this code tells tiny_mce where its main library files are located and that
   # it was loaded via a combined file.
   def init_content
+    Tinymce::Hammer.custom_config_setup  # load the custom config file if exists
+
     @content = "
 (function(){var DomReady=window.DomReady={};var userAgent=navigator.userAgent.toLowerCase();var browser={version:(userAgent.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/)||[])[1],safari:/webkit/.test(userAgent),opera:/opera/.test(userAgent),msie:(/msie/.test(userAgent))&&(!/opera/.test(userAgent)),mozilla:(/mozilla/.test(userAgent))&&(!/(compatible|webkit)/.test(userAgent))};var readyBound=false;var isReady=false;var readyList=[];function domReady(){if(!isReady){isReady=true;if(readyList){for(var fn=0;fn<readyList.length;fn++){readyList[fn].call(window,[]);}
 readyList=[];}}};function addLoadEvent(func){var oldonload=window.onload;if(typeof window.onload!='function'){window.onload=func;}else{window.onload=function(){if(oldonload){oldonload();}
@@ -81,7 +119,7 @@ addLoadEvent(domReady);};DomReady.ready=function(fn,args){bindReady();if(isReady
 
 window.tinyMCEPreInit = {
   base : '#{Tinymce::Hammer.url_path}',
-  suffix : '',  
+  suffix : '',
   query : ''
 }
 window.tinyMCE_GZ = { loaded : true };"
@@ -103,5 +141,5 @@ window.tinyMCE_GZ = { loaded : true };"
   def content
     @content += @events.join("\n")
   end
- 
+
 end
