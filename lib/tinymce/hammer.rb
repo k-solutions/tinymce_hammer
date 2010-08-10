@@ -51,7 +51,7 @@ module Tinymce::Hammer
 
     # add list paths
     if custom_config[:directories]
-      @@lists_path.merge!( custom_config[:directories].reject {|val| val[1][0]=='/' }.inject({}) { |res,val| res.merge!({ val[0] => "#{Rails.root}/#{val[1]}"})} )
+      @@lists_path.merge!( custom_config[:directories].reject {|key,val| val[1][0]=='/' }.inject({}) { |res,val| res.merge!({ val[0] => "#{Rails.root}/#{val[1]}"})} )
     end
     # sets url params for the url_for call in controller
     @@lists_url[:external_image_list_url] ||= { :type => 'images' } if self.images_list_path

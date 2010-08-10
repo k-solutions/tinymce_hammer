@@ -45,7 +45,8 @@ module Tinymce::Hammer
     @@plugins      = custom_config[:plugins]      if custom_config[:plugins]
     @@languages    = custom_config[:languages]    if custom_config[:languages]
     @@themes       = custom_config[:themes]       if custom_config[:themes]
-    @@setup        = custom_config[:setup]       if custom_config[:setup]
+    @@setup        = custom_config[:setup]        if custom_config[:setup]
+
     @@init.merge!(custom_config[:init]) if custom_config[:init]
 
     # add list paths
